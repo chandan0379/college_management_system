@@ -1,0 +1,51 @@
+ body{
+    background: linear-gradient(135deg,#0f172a,#1e293b);
+    min-height:100vh;
+    font-family:'Segoe UI',sans-serif;
+}
+
+.navbar{
+    background: linear-gradient(90deg,#2563eb,#7c3aed)!important;
+    padding:15px;
+}
+
+.navbar-brand{
+    color:white !important;
+    font-size:24px;
+    font-weight:bold;
+}
+
+.card{
+    border:none;
+    border-radius:20px;
+    overflow:hidden;
+    transition:0.3s;
+}
+
+.card:hover{
+    transform:translateY(-8px);
+}
+
+.stat-card{
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+
+.attendance{
+    background:linear-gradient(135deg,#10b981,#059669);
+}
+
+.marks{
+    background:linear-gradient(135deg,#3b82f6,#2563eb);
+}
+
+.courses{
+    background:linear-gradient(135deg,#f59e0b,#d97706);
+}
+
+.welcome-card{
+    border-radius:20px;
+    background:white;
+    padding:20px;
+}
