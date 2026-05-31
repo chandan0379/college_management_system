@@ -10,3 +10,8 @@ class Student(db.Model):
     department = db.Column(db.String(100))
 
     password = db.Column(db.String(100), nullable=False)
+
+    attendance = db.Column(db.Integer, default=85)
+    marks = db.Column(db.Integer, default=420)
+    courses = db.Column(db.Integer, default=5)
+    semester = db.Column(db.String(50), default="4th Semester")

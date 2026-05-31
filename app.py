@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 from database import db
 from models import Student
 
 app = Flask(__name__)
+app.secret_key = "college_management_secret_key"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///college.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -26,6 +27,9 @@ def login():
         ).first()
 
         if student:
+            session["student_name"] = student.name
+            session["student_id"] = student.id
+            session["student_department"] = student.department
             return redirect("/student")
 
         return "Invalid Email or Password"
@@ -63,7 +67,21 @@ def admin():
 
 @app.route("/student")
 def student():
-    return render_template("student_dashboard.html")
+
+    if "student_id" not in session:
+        return redirect("/login")
+
+    student = Student.query.get(session["student_id"])
+
+    return render_template(
+        "student_dashboard.html",
+        student_name=student.name,
+        attendance=student.attendance,
+        marks=student.marks,
+        courses=student.courses,
+        department=student.department,
+        semester=student.semester
+    )
 
 @app.route("/teacher")
 def teacher():
@@ -85,6 +103,10 @@ def students():
         """
 
     return output
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 
 
