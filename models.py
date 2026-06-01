@@ -26,3 +26,23 @@ class Teacher(db.Model):
     subject = db.Column(db.String(100), nullable=False)
     
     password = db.Column(db.String(100), nullable=False)
+
+class Book(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(100), nullable=False)
+
+    author = db.Column(db.String(100), nullable=False)
+
+    category = db.Column(db.String(100), nullable=False)
+
+    quantity = db.Column(db.Integer, nullable=False)
+    
+class IssuedBook(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_name = db.Column(db.String(100))
+
+    book_title = db.Column(db.String(100))

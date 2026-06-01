@@ -15,9 +15,9 @@
 
     <h1>Admin Dashboard</h1>
 
-    <a href="/logout" class="btn btn-danger">
-        Logout
-    </a>
+    <a href="/admin_logout" class="btn btn-danger">
+    Logout
+</a>
 
 </div>
     <div class="row mb-4">
@@ -113,7 +113,21 @@
                 <td>{{ student.name }}</td>
                 <td>{{ student.department }}</td>
  <td>
+{% if student.attendance >= 75 %}
+<span class="badge bg-success">
     {{ student.attendance }}%
+</span>
+
+{% elif student.attendance >= 50 %}
+<span class="badge bg-warning text-dark">
+    {{ student.attendance }}%
+</span>
+
+{% else %}
+<span class="badge bg-danger">
+    {{ student.attendance }}%
+</span>
+{% endif %}
 </td>
                 
                 <td>
@@ -140,10 +154,11 @@
        Edit
     </a>
 
-    <a href="/delete_student/{{ student.id }}"
-       class="btn btn-danger btn-sm">
-       Delete
-    </a>
+   <a href="/delete_student/{{ student.id }}"
+   class="btn btn-danger btn-sm"
+   onclick="return confirm('Delete this student?')">
+   Delete
+</a>
 </td>
             </tr>
 
@@ -178,10 +193,11 @@
        Edit
     </a>
 
-    <a href="/delete_teacher/{{ teacher.id }}"
-       class="btn btn-danger btn-sm">
-       Delete
-    </a>
+   <a href="/delete_teacher/{{ teacher.id }}"
+   class="btn btn-danger btn-sm"
+   onclick="return confirm('Delete this teacher?')">
+   Delete
+</a>
 </td>
         </tr>
         {% endfor %}

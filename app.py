@@ -1,8 +1,7 @@
 from re import search
-
 from flask import Flask, render_template, request, redirect, session
 from database import db
-from models import Student, Teacher
+from models import Student, Teacher, Book, IssuedBook
 
 app = Flask(__name__)
 app.secret_key = "college_management_secret_key"
@@ -63,8 +62,28 @@ def register():
 
     return render_template("register.html")
 
+@app.route("/admin_login", methods=["GET", "POST"])
+def admin_login():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        if username == "admin" and password == "admin123":
+
+            session["admin"] = True
+            return redirect("/admin")
+
+        return "Invalid Admin Credentials"
+
+    return render_template("admin_login.html")
+
 @app.route("/admin")
 def admin():
+
+    if "admin" not in session:
+        return redirect("/admin_login")
 
     search = request.args.get("search")
     teachers = Teacher.query.all()
@@ -173,6 +192,8 @@ def delete_student(id):
     db.session.commit()
 
     return redirect("/admin")
+
+
 
 @app.route("/edit_teacher/<int:id>", methods=["GET", "POST"])
 def edit_teacher(id):
@@ -304,6 +325,71 @@ def teacher_panel():
         avg_marks=round(avg_marks, 1),
         search=search
     )
+
+@app.route("/add_book", methods=["GET", "POST"])
+def add_book():
+
+    if request.method == "POST":
+
+        book = Book(
+            title=request.form["title"],
+            author=request.form["author"],
+            category=request.form["category"],
+            quantity=int(request.form["quantity"])
+        )
+
+        db.session.add(book)
+        db.session.commit()
+
+        return redirect("/library")
+
+    return render_template("add_book.html")
+
+@app.route("/library")
+def library():
+
+    books = Book.query.all()
+
+    return render_template(
+        "library.html",
+        books=books
+    )
+
+@app.route("/delete_book/<int:id>")
+def delete_book(id):
+
+    book = Book.query.get_or_404(id)
+
+    db.session.delete(book)
+    db.session.commit()
+
+    return redirect("/library")
+
+@app.route("/issue_book/<int:id>")
+def issue_book(id):
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    book = Book.query.get_or_404(id)
+
+    if book.quantity > 0:
+
+        student = Student.query.get(session["student_id"])
+
+        issued = IssuedBook(
+            student_name=student.name,
+            book_title=book.title
+        )
+
+        db.session.add(issued)
+
+        book.quantity -= 1
+
+        db.session.commit()
+
+    return redirect("/library")
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -315,6 +401,13 @@ def teacher_logout():
     session.pop("teacher_id", None)
 
     return redirect("/teacher_login")
+
+@app.route("/admin_logout")
+def admin_logout():
+
+    session.pop("admin", None)
+
+    return redirect("/admin_login")
 
 @app.route("/teacher_edit_student/<int:id>", methods=["GET", "POST"])
 def teacher_edit_student(id):
@@ -375,12 +468,6 @@ def change_password():
         return "Old Password Incorrect"
 
     return render_template("change_password.html")
-
-
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
 
 
 if __name__ == "__main__":
