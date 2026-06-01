@@ -74,7 +74,7 @@ def admin():
         students = Student.query.all()
 
     total_students = len(students)
-
+    total_teachers = Teacher.query.count()
     if total_students > 0:
         avg_attendance = sum(s.attendance for s in students) / total_students
         avg_marks = sum(s.marks for s in students) / total_students
@@ -86,6 +86,7 @@ def admin():
         "admin_dashboard.html",
         students=students,
         total_students=total_students,
+        total_teachers=total_teachers,
         avg_attendance=round(avg_attendance, 1),
         avg_marks=round(avg_marks, 1)
     )
@@ -147,12 +148,14 @@ def add_teacher():
         name = request.form["name"]
         email = request.form["email"]
         subject = request.form["subject"]
+        password = request.form["password"]
 
         teacher = Teacher(
-            name=name,
-            email=email,
-            subject=subject
-        )
+          name=name,
+          email=email,
+          subject=subject,
+          password=password
+)
 
         db.session.add(teacher)
         db.session.commit()
@@ -220,6 +223,40 @@ def students():
         """
 
     return output
+@app.route("/teacher_login", methods=["GET", "POST"])
+def teacher_login():
+
+    if request.method == "POST":
+
+        email = request.form["email"]
+        password = request.form["password"]
+
+        teacher = Teacher.query.filter_by(
+            email=email,
+            password=password
+        ).first()
+
+        if teacher:
+
+            session["teacher_id"] = teacher.id
+
+            return redirect("/teacher_panel")
+
+        return "Invalid Email or Password"
+
+    return render_template("teacher_login.html")
+@app.route("/teacher_panel")
+def teacher_panel():
+
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    teacher = Teacher.query.get(session["teacher_id"])
+
+    return render_template(
+        "teacher_panel.html",
+        teacher=teacher
+    )
 @app.route("/logout")
 def logout():
     session.clear()
