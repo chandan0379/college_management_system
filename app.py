@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session
 from database import db
-from models import Student
+from models import Student, Teacher
 
 app = Flask(__name__)
 app.secret_key = "college_management_secret_key"
@@ -57,14 +57,38 @@ def register():
         db.session.add(student)
         db.session.commit()
 
-        return "Student Registered Successfully!"
+        return redirect("/admin")
 
     return render_template("register.html")
 
 @app.route("/admin")
 def admin():
-    return render_template("admin_dashboard.html")
 
+    search = request.args.get("search")
+
+    if search:
+        students = Student.query.filter(
+            Student.name.contains(search)
+        ).all()
+    else:
+        students = Student.query.all()
+
+    total_students = len(students)
+
+    if total_students > 0:
+        avg_attendance = sum(s.attendance for s in students) / total_students
+        avg_marks = sum(s.marks for s in students) / total_students
+    else:
+        avg_attendance = 0
+        avg_marks = 0
+
+    return render_template(
+        "admin_dashboard.html",
+        students=students,
+        total_students=total_students,
+        avg_attendance=round(avg_attendance, 1),
+        avg_marks=round(avg_marks, 1)
+    )
 @app.route("/student")
 def student():
 
@@ -82,10 +106,73 @@ def student():
         department=student.department,
         semester=student.semester
     )
+@app.route("/edit_student/<int:id>", methods=["GET", "POST"])
+def edit_student(id):
 
-@app.route("/teacher")
-def teacher():
-    return render_template("teacher_dashboard.html")
+    student = Student.query.get_or_404(id)
+
+    if request.method == "POST":
+
+        student.name = request.form["name"]
+        student.department = request.form["department"]
+        student.attendance = request.form["attendance"]
+        student.marks = request.form["marks"]
+        student.semester = request.form["semester"]
+
+        db.session.commit()
+
+        return redirect("/admin")
+
+    return render_template(
+        "edit_student.html",
+        student=student
+    )
+
+@app.route("/teachers")
+def teachers():
+
+    teachers = Teacher.query.all()
+
+    return render_template(
+        "teacher_dashboard.html",
+        teachers=teachers
+    )
+
+
+@app.route("/add_teacher", methods=["GET", "POST"])
+def add_teacher():
+
+    if request.method == "POST":
+
+        name = request.form["name"]
+        email = request.form["email"]
+        subject = request.form["subject"]
+
+        teacher = Teacher(
+            name=name,
+            email=email,
+            subject=subject
+        )
+
+        db.session.add(teacher)
+        db.session.commit()
+
+        return redirect("/teachers")
+
+    return render_template("add_teacher.html")
+
+@app.route("/delete_student/<int:id>")
+def delete_student(id):
+
+    student = Student.query.get_or_404(id)
+
+    db.session.delete(student)
+
+    db.session.commit()
+
+    return redirect("/admin")
+
+
 
 @app.route("/students")
 def students():
