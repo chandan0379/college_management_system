@@ -172,6 +172,36 @@ def delete_student(id):
 
     return redirect("/admin")
 
+@app.route("/edit_teacher/<int:id>", methods=["GET", "POST"])
+def edit_teacher(id):
+
+    teacher = Teacher.query.get_or_404(id)
+
+    if request.method == "POST":
+
+        teacher.name = request.form["name"]
+        teacher.email = request.form["email"]
+        teacher.subject = request.form["subject"]
+
+        db.session.commit()
+
+        return redirect("/teachers")
+
+    return render_template(
+        "edit_teacher.html",
+        teacher=teacher
+    )
+
+@app.route("/delete_teacher/<int:id>")
+def delete_teacher(id):
+
+    teacher = Teacher.query.get_or_404(id)
+
+    db.session.delete(teacher)
+
+    db.session.commit()
+
+    return redirect("/teachers")
 
 
 @app.route("/students")
