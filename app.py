@@ -67,6 +67,7 @@ def register():
 def admin():
 
     search = request.args.get("search")
+    teachers = Teacher.query.all()
 
     if search:
         students = Student.query.filter(
@@ -87,6 +88,7 @@ def admin():
     return render_template(
         "admin_dashboard.html",
         students=students,
+        teachers=teachers,
         total_students=total_students,
         total_teachers=total_teachers,
         avg_attendance=round(avg_attendance, 1),
@@ -102,12 +104,7 @@ def student():
 
     return render_template(
         "student_dashboard.html",
-        student_name=student.name,
-        attendance=student.attendance,
-        marks=student.marks,
-        courses=student.courses,
-        department=student.department,
-        semester=student.semester
+        student=student
     )
 @app.route("/edit_student/<int:id>", methods=["GET", "POST"])
 def edit_student(id):
@@ -353,6 +350,31 @@ def student_dashboard():
         "student_dashboard.html",
         student=student
     )
+
+@app.route("/change_password", methods=["GET", "POST"])
+def change_password():
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    student = Student.query.get(session["student_id"])
+
+    if request.method == "POST":
+
+        old_password = request.form["old_password"]
+        new_password = request.form["new_password"]
+
+        if student.password == old_password:
+
+            student.password = new_password
+
+            db.session.commit()
+
+            return redirect("/student")
+
+        return "Old Password Incorrect"
+
+    return render_template("change_password.html")
 
 
 if __name__ == "__main__":

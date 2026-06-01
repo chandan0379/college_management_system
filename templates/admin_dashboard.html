@@ -11,7 +11,15 @@
 
 <div class="container mt-5">
 
-    <h1 class="mb-4">Admin Dashboard</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+    <h1>Admin Dashboard</h1>
+
+    <a href="/logout" class="btn btn-danger">
+        Logout
+    </a>
+
+</div>
     <div class="row mb-4">
 
     <div class="col-md-4">
@@ -49,11 +57,26 @@
     </div>
 </div>
 
+<div class="card shadow mt-4">
+    <div class="card-header bg-dark text-white">
+        Recent Activity
+    </div>
+
+    <div class="card-body">
+        <p>Total Students: {{ total_students }}</p>
+        <p>Total Teachers: {{ total_teachers }}</p>
+        <p>Average Attendance: {{ avg_attendance }}%</p>
+        <p>Average Marks: {{ avg_marks }}</p>
+    </div>
 </div>
-    <div class="container mt-5">
+
+<div class="container mt-5">
 
     <a href="/register" class="btn btn-success mb-3">
     Add Student
+</a>
+<a href="/add_teacher" class="btn btn-primary mb-3 ms-2">
+    Add Teacher
 </a>
 
 <form method="GET" action="/admin" class="mb-3">
@@ -89,8 +112,27 @@
                 <td>{{ student.id }}</td>
                 <td>{{ student.name }}</td>
                 <td>{{ student.department }}</td>
-                <td>{{ student.attendance }}</td>
-                <td>{{ student.marks }}</td>
+ <td>
+    {{ student.attendance }}%
+</td>
+                
+                <td>
+{% if student.marks >= 800 %}
+<span class="badge bg-success">
+    {{ student.marks }}
+</span>
+
+{% elif student.marks >= 500 %}
+<span class="badge bg-warning text-dark">
+    {{ student.marks }}
+</span>
+
+{% else %}
+<span class="badge bg-danger">
+    {{ student.marks }}
+</span>
+{% endif %}
+</td>
                 <td>{{ student.semester }}</td>
   <td>
     <a href="/edit_student/{{ student.id }}"
@@ -110,8 +152,44 @@
         </tbody>
 
     </table>
+    <h3 class="mt-5">Teachers</h3>
+
+<table class="table table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Subject</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for teacher in teachers %}
+        <tr>
+            <td>{{ teacher.id }}</td>
+            <td>{{ teacher.name }}</td>
+            <td>{{ teacher.email }}</td>
+            <td>{{ teacher.subject }}</td>
+            <td>
+    <a href="/edit_teacher/{{ teacher.id }}"
+       class="btn btn-primary btn-sm">
+       Edit
+    </a>
+
+    <a href="/delete_teacher/{{ teacher.id }}"
+       class="btn btn-danger btn-sm">
+       Delete
+    </a>
+</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
 </div>
 
 </body>
+
 </html>
