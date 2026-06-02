@@ -15,6 +15,9 @@ class Student(db.Model):
     marks = db.Column(db.Integer, default=0)
     semester = db.Column(db.String(50))
     
+    photo = db.Column(db.String(200))
+    signature = db.Column(db.String(200))
+    
 class Teacher(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 

@@ -3,11 +3,17 @@ from flask import Flask, render_template, request, redirect, session
 from database import db
 from datetime import datetime, timedelta
 from models import Student, Teacher, Book,IssuedBook, Librarian
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 app.secret_key = "college_management_secret_key"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///college.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Create uploads directories if they don't exist
+os.makedirs(os.path.join(app.root_path, "static/uploads/photos"), exist_ok=True)
+os.makedirs(os.path.join(app.root_path, "static/uploads/signatures"), exist_ok=True)
 
 db.init_app(app)
 
@@ -474,13 +480,50 @@ def student_dashboard():
         student=student
     )
 
-@app.route("/student_profile")
+@app.route("/student_profile", methods=["GET", "POST"])
 def student_profile():
 
     if "student_id" not in session:
         return redirect("/student_login")
 
     student = Student.query.get(session["student_id"])
+
+    if request.method == "POST":
+
+        photo = request.files.get("photo")
+        signature = request.files.get("signature")
+
+        if photo and photo.filename != "":
+
+            photo_filename = secure_filename(photo.filename)
+
+            photo.save(
+                os.path.join(
+                    app.root_path,
+                    "static/uploads/photos",
+                    photo_filename
+                )
+            )
+
+            student.photo = photo_filename
+
+        if signature and signature.filename != "":
+
+            signature_filename = secure_filename(signature.filename)
+
+            signature.save(
+                os.path.join(
+                    app.root_path,
+                    "static/uploads/signatures",
+                    signature_filename
+                )
+            )
+
+            student.signature = signature_filename
+
+        db.session.commit()
+
+        return redirect("/student_profile")
 
     return render_template(
         "student_profile.html",
