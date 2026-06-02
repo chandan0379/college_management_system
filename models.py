@@ -1,20 +1,19 @@
 from database import db
 
 class Student(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
 
-    name = db.Column(db.String(100), nullable=False)
+    roll_number = db.Column(db.String(50), unique=True)
 
-    email = db.Column(db.String(100), unique=True, nullable=False)
-
+    name = db.Column(db.String(100))
+    email = db.Column(db.String(100))
     department = db.Column(db.String(100))
+    password = db.Column(db.String(100))
 
-    password = db.Column(db.String(100), nullable=False)
-
-    attendance = db.Column(db.Integer, default=85)
-    marks = db.Column(db.Integer, default=420)
-    courses = db.Column(db.Integer, default=5)
-    semester = db.Column(db.String(50), default="4th Semester")
+    attendance = db.Column(db.Integer, default=0)
+    marks = db.Column(db.Integer, default=0)
+    semester = db.Column(db.String(50))
     
 class Teacher(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -45,7 +44,12 @@ class IssuedBook(db.Model):
 
     student_id = db.Column(db.Integer)
 
-    book_id = db.Column(db.Integer)
+    book_id = db.Column(
+        db.Integer,
+        db.ForeignKey("book.id")
+    )
+
+    book = db.relationship("Book")
 
     issue_date = db.Column(db.String(50))
 

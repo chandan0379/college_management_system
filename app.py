@@ -47,11 +47,13 @@ def register():
         name = request.form["name"]
         email = request.form["email"]
         department = request.form["department"]
+        roll_number = request.form["roll_number"]
         password = request.form["password"]
 
         student = Student(
             name=name,
             email=email,
+            roll_number=roll_number,
             department=department,
             password=password
         )
@@ -550,12 +552,36 @@ def issued_books():
     if "student_id" not in session:
         return redirect("/student_login")
 
-    return render_template("issued_books.html")
+    student_id = session["student_id"]
+
+    books = IssuedBook.query.filter_by(
+        student_id=student_id
+    ).all()
+
+    return render_template(
+        "issued_books.html",
+        books=books
+    )
+
+@app.route("/test")
+def test():
+    return "WORKING"
 
 @app.route("/test_students")
 def test_students():
     students = Student.query.all()
     return str(len(students))
+
+@app.route("/test_issue")
+def test_issue():
+    return app.url_map.__str__()
+
+@app.route("/test_books")
+def test_books():
+
+    books = Book.query.all()
+
+    return str(len(books))
 
  
 

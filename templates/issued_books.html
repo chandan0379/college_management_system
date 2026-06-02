@@ -27,12 +27,30 @@
                     <th>Status</th>
                 </tr>
 
-                <tr>
-                    <td>No Books Issued Yet</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                </tr>
+                {% if books %}
+
+    {% for item in books %}
+
+    <tr>
+        
+        <td>{{ item.book.title }}</td>
+        <td>{{ item.issue_date }}</td>
+        <td>{{ item.due_date }}</td>
+        <td>Issued</td>
+    </tr>
+
+    {% endfor %}
+
+{% else %}
+
+    <tr>
+        <td>No Books Issued Yet</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+    </tr>
+
+{% endif %}
 
             </table>
 
