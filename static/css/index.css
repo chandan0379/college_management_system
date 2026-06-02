@@ -1668,3 +1668,30 @@ footer{
     line-height:1.8;
     background:white;
 }
+.developer-credit{
+    text-align:center;
+    padding:25px 10px;
+    margin-top:40px;
+    border-top:1px solid rgba(255,255,255,0.1);
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+}
+
+.developer-credit p{
+    margin:0;
+    color:#cbd5e1;
+    font-size:15px;
+    letter-spacing:0.5px;
+}
+
+.developer-credit span{
+    color:#60a5fa;
+    font-weight:700;
+    font-size:18px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+}
+
+.developer-credit:hover span{
+    color:#38bdf8;
+    text-shadow:0 0 10px rgba(56,189,248,0.5);
+}
