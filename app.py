@@ -1,6 +1,7 @@
 from re import search
 from flask import Flask, render_template, request, redirect, session
 from database import db
+from datetime import datetime, timedelta
 from models import Student, Teacher, Book,IssuedBook, Librarian
 
 app = Flask(__name__)
@@ -381,16 +382,41 @@ def student_library():
         books=books
     )
 
-@app.route("/issue_book/<int:id>")
+@app.route("/issue_book/<int:id>", methods=["GET", "POST"])
 def issue_book(id):
 
     book = Book.query.get_or_404(id)
 
-    if book.quantity > 0:
-        book.quantity -= 1
+    students = Student.query.all()
+
+    if request.method == "POST":
+
+        student_id = request.form["student_id"]
+
+        issue_date = datetime.now()
+        due_date = issue_date + timedelta(days=15)
+
+        issued = IssuedBook(
+            student_id=student_id,
+            book_id=book.id,
+            issue_date=issue_date.strftime("%d-%m-%Y"),
+            due_date=due_date.strftime("%d-%m-%Y")
+        )
+
+        db.session.add(issued)
+
+        if book.quantity > 0:
+            book.quantity -= 1
+
         db.session.commit()
 
-    return redirect("/library")
+        return redirect("/library")
+
+    return render_template(
+        "issue_book.html",
+        students=students,
+        book=book
+    )
 
 @app.route("/logout")
 def logout():
@@ -443,6 +469,19 @@ def student_dashboard():
 
     return render_template(
         "student_dashboard.html",
+        student=student
+    )
+
+@app.route("/student_profile")
+def student_profile():
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    student = Student.query.get(session["student_id"])
+
+    return render_template(
+        "student_profile.html",
         student=student
     )
 
@@ -504,6 +543,21 @@ def create_librarian():
     db.session.commit()
 
     return "Librarian Created"
+
+@app.route("/issued_books")
+def issued_books():
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    return render_template("issued_books.html")
+
+@app.route("/test_students")
+def test_students():
+    students = Student.query.all()
+    return str(len(students))
+
+ 
 
 
 if __name__ == "__main__":
