@@ -46,3 +46,8 @@ class IssuedBook(db.Model):
     student_name = db.Column(db.String(100))
 
     book_title = db.Column(db.String(100))
+
+class Librarian(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(100))

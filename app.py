@@ -1,7 +1,7 @@
 from re import search
 from flask import Flask, render_template, request, redirect, session
 from database import db
-from models import Student, Teacher, Book, IssuedBook
+from models import Student, Teacher, Book,IssuedBook, Librarian
 
 app = Flask(__name__)
 app.secret_key = "college_management_secret_key"
@@ -348,13 +348,15 @@ def add_book():
 @app.route("/library")
 def library():
 
+    if "librarian_id" not in session:
+        return redirect("/librarian_login")
+
     books = Book.query.all()
 
     return render_template(
         "library.html",
         books=books
     )
-
 @app.route("/delete_book/<int:id>")
 def delete_book(id):
 
@@ -365,27 +367,27 @@ def delete_book(id):
 
     return redirect("/library")
 
-@app.route("/issue_book/<int:id>")
-def issue_book(id):
+
+@app.route("/student_library")
+def student_library():
 
     if "student_id" not in session:
         return redirect("/student_login")
 
+    books = Book.query.all()
+
+    return render_template(
+        "student_library.html",
+        books=books
+    )
+
+@app.route("/issue_book/<int:id>")
+def issue_book(id):
+
     book = Book.query.get_or_404(id)
 
     if book.quantity > 0:
-
-        student = Student.query.get(session["student_id"])
-
-        issued = IssuedBook(
-            student_name=student.name,
-            book_title=book.title
-        )
-
-        db.session.add(issued)
-
         book.quantity -= 1
-
         db.session.commit()
 
     return redirect("/library")
@@ -468,6 +470,40 @@ def change_password():
         return "Old Password Incorrect"
 
     return render_template("change_password.html")
+
+@app.route("/librarian_login", methods=["GET", "POST"])
+def librarian_login():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        librarian = Librarian.query.filter_by(
+            username=username,
+            password=password
+        ).first()
+
+        if librarian:
+            session["librarian_id"] = librarian.id
+            return redirect("/library")
+
+        return "Invalid Login"
+
+    return render_template("librarian_login.html")
+
+@app.route("/create_librarian")
+def create_librarian():
+
+    librarian = Librarian(
+        username="librarian",
+        password="1234"
+    )
+
+    db.session.add(librarian)
+    db.session.commit()
+
+    return "Librarian Created"
 
 
 if __name__ == "__main__":
