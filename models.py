@@ -43,11 +43,16 @@ class IssuedBook(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    student_name = db.Column(db.String(100))
+    student_id = db.Column(db.Integer)
 
-    book_title = db.Column(db.String(100))
+    book_id = db.Column(db.Integer)
+
+    issue_date = db.Column(db.String(50))
+
+    due_date = db.Column(db.String(50))
 
 class Librarian(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
+
