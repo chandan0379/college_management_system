@@ -589,6 +589,13 @@ def create_librarian():
 
     return "Librarian Created"
 
+@app.route("/test_librarian")
+def test_librarian():
+
+    librarians = Librarian.query.all()
+
+    return str(len(librarians))
+
 @app.route("/issued_books")
 def issued_books():
 
