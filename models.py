@@ -63,3 +63,13 @@ class Librarian(db.Model):
     username = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
 
+class StudyResource(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(200))
+
+    filename = db.Column(db.String(300))
+
+    subject = db.Column(db.String(100))
+

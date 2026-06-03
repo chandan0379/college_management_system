@@ -2,7 +2,7 @@ from re import search
 from flask import Flask, render_template, request, redirect, session
 from database import db
 from datetime import datetime, timedelta
-from models import Student, Teacher, Book,IssuedBook, Librarian
+from models import Student, StudyResource, Teacher, Book,IssuedBook, Librarian
 from werkzeug.utils import secure_filename
 import os
 
@@ -96,6 +96,7 @@ def admin():
 
     search = request.args.get("search")
     teachers = Teacher.query.all()
+    librarians = Librarian.query.all()
 
     if search:
         students = Student.query.filter(
@@ -117,11 +118,43 @@ def admin():
         "admin_dashboard.html",
         students=students,
         teachers=teachers,
+        librarians = Librarian.query.all(),
         total_students=total_students,
         total_teachers=total_teachers,
         avg_attendance=round(avg_attendance, 1),
         avg_marks=round(avg_marks, 1)
     )
+
+@app.route("/delete_librarian/<int:id>")
+def delete_librarian(id):
+
+    librarian = Librarian.query.get(id)
+
+    db.session.delete(librarian)
+    db.session.commit()
+
+    return redirect("/admin")
+
+@app.route("/edit_librarian/<int:id>", methods=["GET", "POST"])
+def edit_librarian(id):
+
+    librarian = Librarian.query.get(id)
+
+    if request.method == "POST":
+
+        librarian.username = request.form["username"]
+        librarian.password = request.form["password"]
+
+        db.session.commit()
+
+        return redirect("/admin")
+
+    return render_template(
+        "edit_librarian.html",
+        librarian=librarian
+    )
+
+
 @app.route("/student")
 def student():
 
@@ -190,6 +223,45 @@ def add_teacher():
         return redirect("/teachers")
 
     return render_template("add_teacher.html")
+
+@app.route("/upload_resource", methods=["GET", "POST"])
+def upload_resource():
+
+    if request.method == "POST":
+
+        title = request.form["title"]
+        subject = request.form["subject"]
+
+        pdf = request.files["pdf"]
+
+        filename = pdf.filename
+
+        pdf.save(
+            "static/uploads/resources/" + filename
+        )
+
+        resource = StudyResource(
+            title=title,
+            subject=subject,
+            filename=filename
+        )
+
+        db.session.add(resource)
+        db.session.commit()
+
+        return redirect("/teacher_panel")
+
+    return render_template("upload_resource.html")
+
+@app.route("/study_resources")
+def study_resources():
+
+    resources = StudyResource.query.all()
+
+    return render_template(
+        "study_resources.html",
+        resources=resources
+    )
 
 @app.route("/delete_student/<int:id>")
 def delete_student(id):
@@ -596,6 +668,26 @@ def test_librarian():
 
     return str(len(librarians))
 
+@app.route("/add_librarian", methods=["GET", "POST"])
+def add_librarian():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        librarian = Librarian(
+            username=username,
+            password=password
+        )
+
+        db.session.add(librarian)
+        db.session.commit()
+
+        return redirect("/admin")
+
+    return render_template("add_librarian.html")
+
 @app.route("/issued_books")
 def issued_books():
 
@@ -611,6 +703,49 @@ def issued_books():
     return render_template(
         "issued_books.html",
         books=books
+    )
+
+@app.route("/teacher_resources")
+def teacher_resources():
+
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    resources = StudyResource.query.all()
+
+    return render_template(
+        "teacher_resources.html",
+        resources=resources
+    )
+@app.route("/delete_resource/<int:id>")
+def delete_resource(id):
+
+    resource = StudyResource.query.get(id)
+
+    db.session.delete(resource)
+
+    db.session.commit()
+
+    return redirect("/teacher_resources")
+
+@app.route("/edit_resource/<int:id>",
+           methods=["GET", "POST"])
+def edit_resource(id):
+
+    resource = StudyResource.query.get(id)
+
+    if request.method == "POST":
+
+        resource.title = request.form["title"]
+        resource.subject = request.form["subject"]
+
+        db.session.commit()
+
+        return redirect("/teacher_resources")
+
+    return render_template(
+        "edit_resource.html",
+        resource=resource
     )
 
 @app.route("/test")

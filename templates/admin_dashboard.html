@@ -78,6 +78,10 @@
 <a href="/add_teacher" class="btn btn-primary mb-3 ms-2">
     Add Teacher
 </a>
+<a href="/add_librarian"
+      class="btn btn-warning">
+      Add Librarian
+</a>
 
 <form method="GET" action="/admin" class="mb-3">
     <input
@@ -87,7 +91,7 @@
         placeholder="Search student by name..."
     >
 </form>
-
+        <h3 class="mt-5">Students</h3>
     <table class="table table-bordered table-striped">
 
     
@@ -205,6 +209,50 @@
 </table>
 
 </div>
+
+<h2 class="mt-5">Librarians</h2>
+
+<table class="table table-bordered">
+
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for librarian in librarians %}
+
+        <tr>
+
+            <td>{{ librarian.id }}</td>
+
+            <td>{{ librarian.username }}</td>
+
+            <td>
+
+                <a href="/edit_librarian/{{ librarian.id }}"
+                   class="btn btn-primary btn-sm">
+                   Edit
+                </a>
+
+                <a href="/delete_librarian/{{ librarian.id }}"
+                   class="btn btn-danger btn-sm">
+                   Delete
+                </a>
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
 
 </body>
 
