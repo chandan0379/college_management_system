@@ -2,7 +2,7 @@ from re import search
 from flask import Flask, render_template, request, redirect, session
 from database import db
 from datetime import datetime, timedelta
-from models import Assignment, Student, StudyResource, Submission, Teacher, Book,IssuedBook, Librarian
+from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission
 from werkzeug.utils import secure_filename
 import os
 
@@ -95,6 +95,7 @@ def admin():
         return redirect("/admin_login")
 
     search = request.args.get("search")
+
     teachers = Teacher.query.all()
     librarians = Librarian.query.all()
 
@@ -107,23 +108,106 @@ def admin():
 
     total_students = len(students)
     total_teachers = Teacher.query.count()
+    total_librarians = Librarian.query.count()
+    total_books = Book.query.count()
+
+
+    cse_students = Student.query.filter_by(
+        department="CSE"
+    ).count()
+
+    it_students = Student.query.filter_by(
+        department="IT"
+    ).count()
+
+    ece_students = Student.query.filter_by(
+        department="ECE"
+    ).count()
+
+    me_students = Student.query.filter_by(
+        department="ME"
+    ).count()
+
+    csds_students = Student.query.filter_by(
+        department="CSDS"
+    ).count()
+
+    ee_students = Student.query.filter_by(
+        department="EE"
+    ).count()
+
+    # Department Wise Teachers
+
+    cse_teachers = Teacher.query.filter_by(
+        subject="CSE"
+    ).count()
+
+    it_teachers = Teacher.query.filter_by(
+        subject="IT"
+    ).count()
+
+    ece_teachers = Teacher.query.filter_by(
+        subject="ECE"
+    ).count()
+
+    me_teachers = Teacher.query.filter_by(
+        subject="ME"
+    ).count()
+
+    csds_teachers = Teacher.query.filter_by(
+        subject="CSDS"
+    ).count()
+
+    ee_teachers = Teacher.query.filter_by(
+        subject="EE"
+    ).count()
+
     if total_students > 0:
-        avg_attendance = sum(s.attendance for s in students) / total_students
-        avg_marks = sum(s.marks for s in students) / total_students
+
+        avg_attendance = sum(
+            s.attendance for s in students
+        ) / total_students
+
+        avg_marks = sum(
+            s.marks for s in students
+        ) / total_students
+
     else:
+
         avg_attendance = 0
         avg_marks = 0
 
     return render_template(
         "admin_dashboard.html",
+
         students=students,
         teachers=teachers,
-        librarians = Librarian.query.all(),
+        librarians=librarians,
+
         total_students=total_students,
         total_teachers=total_teachers,
+        total_librarians=total_librarians,
+        total_books=total_books,
+
         avg_attendance=round(avg_attendance, 1),
-        avg_marks=round(avg_marks, 1)
+        avg_marks=round(avg_marks, 1),
+
+        cse_students=cse_students,
+        it_students=it_students,
+        ece_students=ece_students,
+        me_students=me_students,
+        csds_students=csds_students,
+        ee_students=ee_students,
+
+        cse_teachers=cse_teachers,
+        it_teachers=it_teachers,
+        ece_teachers=ece_teachers,
+        me_teachers=me_teachers,
+        csds_teachers=csds_teachers,
+        ee_teachers=ee_teachers
     )
+
+
 
 @app.route("/delete_librarian/<int:id>")
 def delete_librarian(id):
