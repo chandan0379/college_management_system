@@ -2,7 +2,7 @@ from re import search
 from flask import Flask, render_template, request, redirect, session
 from database import db
 from datetime import datetime, timedelta
-from models import Student, StudyResource, Teacher, Book,IssuedBook, Librarian
+from models import Assignment, Student, StudyResource, Submission, Teacher, Book,IssuedBook, Librarian
 from werkzeug.utils import secure_filename
 import os
 
@@ -746,6 +746,124 @@ def edit_resource(id):
     return render_template(
         "edit_resource.html",
         resource=resource
+    )
+
+@app.route("/upload_assignment",
+           methods=["GET","POST"])
+def upload_assignment():
+
+    if request.method == "POST":
+
+        title = request.form["title"]
+        subject = request.form["subject"]
+
+        pdf = request.files["pdf"]
+
+        filename = pdf.filename
+
+        pdf.save(
+            "static/uploads/assignments/" + filename
+        )
+
+        assignment = Assignment(
+            title=title,
+            subject=subject,
+            filename=filename
+        )
+
+        db.session.add(assignment)
+        db.session.commit()
+
+        return redirect("/teacher_panel")
+
+    return render_template(
+        "upload_assignment.html"
+    )
+@app.route("/assignments")
+def assignments():
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    assignments = Assignment.query.all()
+
+    student = Student.query.get(
+        session["student_id"]
+    )
+
+    submitted_ids = []
+
+    submissions = Submission.query.filter_by(
+        student_name=student.name
+    ).all()
+
+    for s in submissions:
+        submitted_ids.append(
+            s.assignment_id
+        )
+
+    return render_template(
+        "assignments.html",
+        assignments=assignments,
+        submitted_ids=submitted_ids
+    )
+@app.route("/submit_assignment/<int:id>",
+           methods=["GET","POST"])
+def submit_assignment(id):
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    assignment = Assignment.query.get(id)
+
+    student = Student.query.get(
+        session["student_id"]
+    )
+
+    if request.method == "POST":
+
+        existing = Submission.query.filter_by(
+            student_name=student.name,
+            assignment_id=id
+        ).first()
+
+        if existing:
+            return "Already Submitted"
+
+        pdf = request.files["pdf"]
+
+        filename = pdf.filename
+
+        pdf.save(
+            "static/uploads/submissions/" + filename
+        )
+
+        submission = Submission(
+            student_name=student.name,
+            assignment_id=id,
+            filename=filename
+        )
+
+        db.session.add(submission)
+        db.session.commit()
+
+        return redirect("/assignments")
+
+    return render_template(
+        "submit_assignment.html",
+        assignment=assignment
+    )
+@app.route("/view_submissions")
+def view_submissions():
+
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    submissions = Submission.query.all()
+
+    return render_template(
+        "view_submissions.html",
+        submissions=submissions
     )
 
 @app.route("/test")

@@ -5,21 +5,118 @@
     
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+
+body{
+    background:#f3f6fb;
+}
+
+.dashboard-title{
+    font-weight:700;
+    color:#1e293b;
+}
+
+.top-card{
+    border:none;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+    transition:0.3s;
+}
+
+.top-card:hover{
+    transform:translateY(-5px);
+}
+
+.btn{
+    border-radius:10px;
+    font-weight:600;
+}
+
+.table{
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.table th{
+    text-align:center;
+    vertical-align:middle;
+}
+
+.table td{
+    vertical-align:middle;
+}
+
+.card{
+    border:none;
+    border-radius:18px;
+}
+
+.card-header{
+    font-weight:600;
+}
+
+.activity-card{
+    border-radius:18px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+}
+
+.search-box{
+    border-radius:12px;
+    padding:12px;
+}
+
+.section-title{
+    font-weight:700;
+    color:#1e293b;
+    margin-bottom:15px;
+}
+
+.admin-header{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:white;
+    padding:25px;
+    border-radius:18px;
+    margin-bottom:25px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.12);
+}
+
+.admin-header h1{
+    margin:0;
+    font-weight:700;
+}
+
+.admin-actions{
+    background:white;
+    padding:20px;
+    border-radius:18px;
+    box-shadow:0 6px 15px rgba(0,0,0,0.08);
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+</style>
+
+
 </head>
 
 <body class="bg-light">
 
 <div class="container mt-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
 
-    <h1>Admin Dashboard</h1>
+<div class="admin-header d-flex justify-content-between align-items-center">
 
-    <a href="/admin_logout" class="btn btn-danger">
-    Logout
-</a>
+    <h1>🎓 Admin Dashboard</h1>
+
+    <a href="/admin_logout"
+       class="btn btn-danger">
+       Logout
+    </a>
 
 </div>
+
     <div class="row mb-4">
 
     <div class="col-md-4">
@@ -91,7 +188,7 @@
         placeholder="Search student by name..."
     >
 </form>
-        <h3 class="mt-5">Students</h3>
+        <h3 class="section-title mt-5">👨‍🎓 Students</h3>
     <table class="table table-bordered table-striped">
 
     
@@ -171,7 +268,7 @@
         </tbody>
 
     </table>
-    <h3 class="mt-5">Teachers</h3>
+    <h3 class="section-title mt-5">👨‍🏫 Teachers</h3>
 
 <table class="table table-bordered">
     <thead class="table-dark">
@@ -210,7 +307,7 @@
 
 </div>
 
-<h2 class="mt-5">Librarians</h2>
+<h2 class="section-title mt-5">📚 Librarians</h2>
 
 <table class="table table-bordered">
 

@@ -73,3 +73,20 @@ class StudyResource(db.Model):
 
     subject = db.Column(db.String(100))
 
+class Assignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(200))
+    subject = db.Column(db.String(100))
+
+    filename = db.Column(db.String(300))
+
+class Submission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_name = db.Column(db.String(100))
+
+    assignment_id = db.Column(db.Integer)
+
+    filename = db.Column(db.String(300))
+
