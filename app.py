@@ -1,8 +1,9 @@
 from re import search
 from flask import Flask, render_template, request, redirect, session
+import werkzeug
 from database import db
 from datetime import datetime, timedelta
-from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission
+from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission, Exam, Question, StudentAnswer, Result
 from werkzeug.utils import secure_filename
 import os
 
@@ -948,6 +949,193 @@ def view_submissions():
     return render_template(
         "view_submissions.html",
         submissions=submissions
+    )
+
+@app.route("/create_exam", methods=["GET","POST"])
+def create_exam():
+
+    if request.method == "POST":
+
+        title = request.form["title"]
+        subject = request.form["subject"]
+        duration = request.form["duration"]
+
+        exam = Exam(
+            title=title,
+            subject=subject,
+            duration=duration
+        )
+
+        db.session.add(exam)
+        db.session.commit()
+
+        return redirect("/teacher_panel")
+
+    return render_template("create_exam.html")
+
+@app.route("/exam_list")
+def exam_list():
+
+    exams = Exam.query.all()
+
+    return render_template(
+        "exam_list.html",
+        exams=exams
+    )
+@app.route("/add_question/<int:id>",
+           methods=["GET","POST"])
+def add_question(id):
+
+    if request.method == "POST":
+
+        question = request.form["question"]
+
+        option_a = request.form["option_a"]
+
+        option_b = request.form["option_b"]
+
+        option_c = request.form["option_c"]
+
+        option_d = request.form["option_d"]
+
+        correct_answer = request.form["correct_answer"]
+
+        q = Question(
+
+            exam_id=id,
+
+            question=question,
+
+            option_a=option_a,
+
+            option_b=option_b,
+
+            option_c=option_c,
+
+            option_d=option_d,
+
+            correct_answer=correct_answer
+
+        )
+
+        db.session.add(q)
+
+        db.session.commit()
+
+        return redirect(f"/add_question/{id}")
+
+    return render_template(
+        "add_question.html"
+    )
+
+@app.route("/student_exams")
+def student_exams():
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    exams = Exam.query.all()
+
+    return render_template(
+        "student_exams.html",
+        exams=exams
+    )
+@app.route("/start_exam/<int:id>", methods=["GET", "POST"])
+def start_exam(id):
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    questions = Question.query.filter_by(
+        exam_id=id
+    ).all()
+
+    if request.method == "POST":
+
+        score = 0
+
+        for q in questions:
+
+            answer = request.form.get(
+                f"question_{q.id}"
+            )
+
+            if answer == q.correct_answer:
+                score += 1
+
+        percentage = (score / len(questions)) * 100
+
+        # Student Information
+        student = Student.query.get(
+            session["student_id"]
+        )
+
+        # Exam Information
+        exam = Exam.query.get(id)
+
+        # Save Result
+        result = Result(
+
+            student_id=student.id,
+
+            student_name=student.name,
+
+            roll_number=student.roll_number,
+
+            exam_id=exam.id,
+
+            exam_title=exam.title,
+
+            marks=score,
+
+            total=len(questions),
+
+            percentage=round(percentage, 2)
+
+        )
+
+        db.session.add(result)
+        db.session.commit()
+
+        return redirect("/my_result")
+
+    return render_template(
+        "start_exam.html",
+        questions=questions
+    )
+@app.route("/my_result")
+def my_result():
+
+    result = Result.query.filter_by(
+        student_id=session["student_id"]
+    ).order_by(Result.id.desc()).first()
+
+    return render_template(
+
+        "my_result.html",
+
+        result=result
+
+    )
+@app.route("/exam_results")
+def exam_results():
+
+    results = Result.query.all()
+
+    students = Student.query.all()
+
+    exams = Exam.query.all()
+
+    return render_template(
+
+        "exam_results.html",
+
+        results=results,
+
+        students=students,
+
+        exams=exams
+
     )
 
 @app.route("/test")

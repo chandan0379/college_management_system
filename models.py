@@ -93,3 +93,64 @@ class Submission(db.Model):
 
     filename = db.Column(db.String(300))
 
+class Exam(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(200))
+
+    subject = db.Column(db.String(100))
+
+    duration = db.Column(db.Integer)
+
+
+class Question(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    exam_id = db.Column(db.Integer)
+
+    question = db.Column(db.Text)
+
+    option_a = db.Column(db.String(200))
+
+    option_b = db.Column(db.String(200))
+
+    option_c = db.Column(db.String(200))
+
+    option_d = db.Column(db.String(200))
+
+    correct_answer = db.Column(db.String(1))
+
+
+class StudentAnswer(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_id = db.Column(db.Integer)
+
+    question_id = db.Column(db.Integer)
+
+    selected_option = db.Column(db.String(1))
+
+
+class Result(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_id = db.Column(db.Integer)
+
+    student_name = db.Column(db.String(100))
+
+    roll_number = db.Column(db.String(100))
+
+    exam_id = db.Column(db.Integer)
+
+    exam_title = db.Column(db.String(200))
+
+    marks = db.Column(db.Integer)
+
+    total = db.Column(db.Integer)
+
+    percentage = db.Column(db.Float)
+
