@@ -72,6 +72,8 @@ class StudyResource(db.Model):
 
     title = db.Column(db.String(200))
 
+    department = db.Column(db.String(50))
+
     filename = db.Column(db.String(300))
 
     subject = db.Column(db.String(100))
@@ -80,6 +82,9 @@ class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     title = db.Column(db.String(200))
+
+    department = db.Column(db.String(50))
+
     subject = db.Column(db.String(100))
 
     filename = db.Column(db.String(300))
@@ -88,6 +93,8 @@ class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     student_name = db.Column(db.String(100))
+
+    department = db.Column(db.String(50))
 
     assignment_id = db.Column(db.Integer)
 
@@ -98,6 +105,8 @@ class Exam(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     title = db.Column(db.String(200))
+
+    department = db.Column(db.String(50))
 
     subject = db.Column(db.String(100))
 

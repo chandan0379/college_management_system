@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission, Exam, Question, StudentAnswer, Result, ResultAnswer
 from werkzeug.utils import secure_filename
 import os
+import smtplib
+import random
+
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 app.secret_key = "college_management_secret_key"
@@ -292,15 +296,19 @@ def add_teacher():
 
         name = request.form["name"]
         email = request.form["email"]
+        department = request.form["department"]   # NEW
         subject = request.form["subject"]
         password = request.form["password"]
 
         teacher = Teacher(
-          name=name,
-          email=email,
-          subject=subject,
-          password=password
-)
+
+            name=name,
+            email=email,
+            department=department,   # NEW
+            subject=subject,
+            password=password
+
+        )
 
         db.session.add(teacher)
         db.session.commit()
@@ -311,6 +319,11 @@ def add_teacher():
 
 @app.route("/upload_resource", methods=["GET", "POST"])
 def upload_resource():
+
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    teacher = Teacher.query.get(session["teacher_id"])
 
     if request.method == "POST":
 
@@ -326,9 +339,15 @@ def upload_resource():
         )
 
         resource = StudyResource(
+
             title=title,
+
             subject=subject,
+
+            department=teacher.department,   # Auto Department
+
             filename=filename
+
         )
 
         db.session.add(resource)
@@ -427,6 +446,9 @@ def teacher_login():
 
             session["teacher_id"] = teacher.id
 
+            # Department save korchi
+            session["teacher_department"] = teacher.department
+
             return redirect("/teacher_panel")
 
         return "Invalid Email or Password"
@@ -467,11 +489,22 @@ def teacher_panel():
     search = request.args.get("search")
 
     if search:
-        students = Student.query.filter(
-            Student.name.contains(search)
-        ).all()
+
+     students = Student.query.filter(
+
+        Student.department == session["teacher_department"],
+
+        Student.name.contains(search)
+
+    ).all()
+
     else:
-        students = Student.query.all()
+
+     students = Student.query.filter_by(
+
+        department=session["teacher_department"]
+
+    ).all()
 
     total_students = len(students)
 
@@ -610,6 +643,11 @@ def teacher_edit_student(id):
 
     student = Student.query.get_or_404(id)
 
+    # Department Security
+    if student.department != session["teacher_department"]:
+
+        return "❌ Access Denied! You can only manage students from your own department.", 403
+
     if request.method == "POST":
 
         student.attendance = int(request.form["attendance"])
@@ -629,6 +667,8 @@ def student_dashboard():
 
     if "student_id" not in session:
         return redirect("/student_login")
+
+    print("Current Student ID =", session["student_id"])
 
     student = Student.query.get(session["student_id"])
 
@@ -838,9 +878,13 @@ def edit_resource(id):
         resource=resource
     )
 
-@app.route("/upload_assignment",
-           methods=["GET","POST"])
+@app.route("/upload_assignment", methods=["GET","POST"])
 def upload_assignment():
+
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    teacher = Teacher.query.get(session["teacher_id"])
 
     if request.method == "POST":
 
@@ -856,9 +900,15 @@ def upload_assignment():
         )
 
         assignment = Assignment(
+
             title=title,
+
             subject=subject,
+
+            department=teacher.department,
+
             filename=filename
+
         )
 
         db.session.add(assignment)
@@ -869,17 +919,20 @@ def upload_assignment():
     return render_template(
         "upload_assignment.html"
     )
+
 @app.route("/assignments")
 def assignments():
 
     if "student_id" not in session:
         return redirect("/student_login")
 
-    assignments = Assignment.query.all()
-
     student = Student.query.get(
         session["student_id"]
     )
+
+    assignments = Assignment.query.filter_by(
+        department=student.department
+    ).all()
 
     submitted_ids = []
 
@@ -897,6 +950,8 @@ def assignments():
         assignments=assignments,
         submitted_ids=submitted_ids
     )
+
+
 @app.route("/submit_assignment/<int:id>",
            methods=["GET","POST"])
 def submit_assignment(id):
@@ -959,6 +1014,11 @@ def view_submissions():
 @app.route("/create_exam", methods=["GET","POST"])
 def create_exam():
 
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    teacher = Teacher.query.get(session["teacher_id"])
+
     if request.method == "POST":
 
         title = request.form["title"]
@@ -966,9 +1026,15 @@ def create_exam():
         duration = request.form["duration"]
 
         exam = Exam(
+
             title=title,
+
+            department=teacher.department,   # Automatic
+
             subject=subject,
+
             duration=duration
+
         )
 
         db.session.add(exam)
@@ -1039,12 +1105,86 @@ def student_exams():
     if "student_id" not in session:
         return redirect("/student_login")
 
-    exams = Exam.query.all()
+    student = Student.query.get(session["student_id"])
+
+    exams = Exam.query.filter_by(
+        department=student.department
+    ).all()
 
     return render_template(
         "student_exams.html",
         exams=exams
     )
+
+@app.route("/finish_exam/<int:exam_id>")
+def finish_exam(exam_id):
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    questions = Question.query.filter_by(exam_id=exam_id).all()
+
+    answers = session.get("exam_answers", {})
+
+    score = 0
+
+    student = Student.query.get(session["student_id"])
+    exam = Exam.query.get(exam_id)
+
+    for q in questions:
+
+        if answers.get(str(q.id)) == q.correct_answer:
+            score += 1
+
+    percentage = round(score * 100 / len(questions), 2)
+
+    result = Result(
+
+        student_id=student.id,
+        student_name=student.name,
+        roll_number=student.roll_number,
+
+        exam_id=exam.id,
+        exam_title=exam.title,
+
+        marks=score,
+        total=len(questions),
+        percentage=percentage
+
+    )
+
+    db.session.add(result)
+    db.session.commit()
+
+    for q in questions:
+
+        answer = ResultAnswer(
+
+            result_id=result.id,
+
+            question=q.question,
+
+            option_a=q.option_a,
+            option_b=q.option_b,
+            option_c=q.option_c,
+            option_d=q.option_d,
+
+            student_answer=answers.get(str(q.id)),
+            correct_answer=q.correct_answer,
+
+            is_correct=(
+                answers.get(str(q.id)) == q.correct_answer
+            )
+
+        )
+
+        db.session.add(answer)
+
+    db.session.commit()
+
+    session.pop("exam_answers", None)
+
+    return redirect(f"/view_result/{result.id}")
  
 @app.route("/exam/<int:exam_id>/<int:question_no>", methods=["GET","POST"])
 def exam_question(exam_id, question_no):
@@ -1133,6 +1273,9 @@ def view_result(result_id):
 
     result = Result.query.get_or_404(result_id)
 
+    if result.student_id != session["student_id"]:
+        return "Unauthorized", 403
+
     answers = ResultAnswer.query.filter_by(
         result_id=result.id
     ).all()
@@ -1141,6 +1284,18 @@ def view_result(result_id):
         "view_result.html",
         result=result,
         answers=answers
+    )
+@app.route("/exam_results")
+def exam_results():
+
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    results = Result.query.order_by(Result.id.desc()).all()
+
+    return render_template(
+        "exam_results.html",
+        results=results
     )
 
 @app.route("/teacher_view_result/<int:result_id>")
@@ -1181,8 +1336,129 @@ def test_books():
 
     return str(len(books))
 
- 
+@app.route("/reset_exam/<int:result_id>")
+def reset_exam(result_id):
 
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
+
+    result = Result.query.get_or_404(result_id)
+
+    # Delete answer sheet
+    ResultAnswer.query.filter_by(
+        result_id=result.id
+    ).delete()
+
+    # Delete student answers
+    StudentAnswer.query.filter_by(
+        student_id=result.student_id,
+        exam_id=result.exam_id
+    ).delete()
+
+    # Delete result
+    db.session.delete(result)
+
+    db.session.commit()
+
+    return redirect("/exam_results")
+
+
+def send_otp(email, otp):
+
+    sender = "kunduchandan240@gmail.com"
+
+    app_password = "msir cjjw boxu mzty"
+
+    message = MIMEText(
+        f"Your College Management System OTP is {otp}"
+    )
+
+    message["Subject"] = "Password Reset OTP"
+
+    message["From"] = sender
+    message["To"] = email
+
+    server = smtplib.SMTP("smtp.gmail.com",587)
+
+    server.starttls()
+
+    server.login(sender, app_password)
+
+    server.sendmail(
+        sender,
+        email,
+        message.as_string()
+    )
+
+    server.quit()
+
+
+@app.route("/forgot_password", methods=["GET","POST"])
+def forgot_password():
+
+    if request.method == "POST":
+
+        email = request.form["email"]
+
+        student = Student.query.filter_by(
+            email=email
+        ).first()
+
+        if not student:
+            return "Email Not Registered"
+
+        otp = random.randint(100000,999999)
+
+        session["otp"] = str(otp)
+
+        session["reset_email"] = email
+
+        send_otp(email, otp)
+
+        return redirect("/verify_otp")
+
+    return render_template("forgot_password.html")
+@app.route("/verify_otp", methods=["GET", "POST"])
+def verify_otp():
+
+    if request.method == "POST":
+
+        user_otp = request.form["otp"]
+
+        if user_otp == session.get("otp"):
+
+            return redirect("/reset_password")
+
+        return "Invalid OTP"
+
+    return render_template("verify_otp.html")
+
+@app.route("/reset_password", methods=["GET", "POST"])
+def reset_password():
+
+    if "reset_email" not in session:
+        return redirect("/forgot_password")
+
+    if request.method == "POST":
+
+        new_password = request.form["new_password"]
+
+        student = Student.query.filter_by(
+            email=session["reset_email"]
+        ).first()
+
+        if student:
+
+            student.password = new_password
+
+            db.session.commit()
+
+        session.pop("otp", None)
+        session.pop("reset_email", None)
+
+        return redirect("/student_login")
+
+    return render_template("reset_password.html")
 
 if __name__ == "__main__":
     with app.app_context():
