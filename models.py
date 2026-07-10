@@ -129,6 +129,8 @@ class StudentAnswer(db.Model):
 
     student_id = db.Column(db.Integer)
 
+    exam_id = db.Column(db.Integer)
+
     question_id = db.Column(db.Integer)
 
     selected_option = db.Column(db.String(1))
@@ -153,4 +155,22 @@ class Result(db.Model):
     total = db.Column(db.Integer)
 
     percentage = db.Column(db.Float)
+
+class ResultAnswer(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    result_id = db.Column(db.Integer)
+
+    question = db.Column(db.Text)
+
+    option_a = db.Column(db.String(200))
+    option_b = db.Column(db.String(200))
+    option_c = db.Column(db.String(200))
+    option_d = db.Column(db.String(200))
+
+    student_answer = db.Column(db.String(1))
+    correct_answer = db.Column(db.String(1))
+
+    is_correct = db.Column(db.Boolean)
 

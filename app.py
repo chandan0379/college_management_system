@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, session
 import werkzeug
 from database import db
 from datetime import datetime, timedelta
-from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission, Exam, Question, StudentAnswer, Result
+from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission, Exam, Question, StudentAnswer, Result, ResultAnswer
 from werkzeug.utils import secure_filename
 import os
 
@@ -632,9 +632,14 @@ def student_dashboard():
 
     student = Student.query.get(session["student_id"])
 
+    results = Result.query.filter_by(
+        student_id=student.id
+    ).order_by(Result.id.desc()).all()
+
     return render_template(
         "student_dashboard.html",
-        student=student
+        student=student,
+        results=results
     )
 
 @app.route("/student_profile", methods=["GET", "POST"])
@@ -1040,68 +1045,53 @@ def student_exams():
         "student_exams.html",
         exams=exams
     )
-@app.route("/start_exam/<int:id>", methods=["GET", "POST"])
-def start_exam(id):
+ 
+@app.route("/exam/<int:exam_id>/<int:question_no>", methods=["GET","POST"])
+def exam_question(exam_id, question_no):
 
     if "student_id" not in session:
         return redirect("/student_login")
 
     questions = Question.query.filter_by(
-        exam_id=id
+        exam_id=exam_id
     ).all()
 
-    if request.method == "POST":
+    total_questions = len(questions)
 
-        score = 0
+    if total_questions == 0:
+        return "No Question Found"
 
-        for q in questions:
+    if question_no > total_questions:
+        return redirect(f"/finish_exam/{exam_id}")
 
-            answer = request.form.get(
-                f"question_{q.id}"
-            )
+    question = questions[question_no-1]
 
-            if answer == q.correct_answer:
-                score += 1
+    progress = int(question_no*100/total_questions)
 
-        percentage = (score / len(questions)) * 100
+    if request.method=="POST":
 
-        # Student Information
-        student = Student.query.get(
-            session["student_id"]
-        )
+        answers=session.get("exam_answers",{})
 
-        # Exam Information
-        exam = Exam.query.get(id)
+        answers[str(question.id)] = request.form.get("answer")
 
-        # Save Result
-        result = Result(
+        session["exam_answers"]=answers
 
-            student_id=student.id,
-
-            student_name=student.name,
-
-            roll_number=student.roll_number,
-
-            exam_id=exam.id,
-
-            exam_title=exam.title,
-
-            marks=score,
-
-            total=len(questions),
-
-            percentage=round(percentage, 2)
-
-        )
-
-        db.session.add(result)
-        db.session.commit()
-
-        return redirect("/my_result")
+        return redirect(f"/exam/{exam_id}/{question_no+1}")
 
     return render_template(
-        "start_exam.html",
-        questions=questions
+
+        "exam_question.html",
+
+        question=question,
+
+        question_no=question_no,
+
+        total_questions=total_questions,
+
+        exam_id=exam_id,
+
+        progress=progress
+
     )
 @app.route("/my_result")
 def my_result():
@@ -1117,25 +1107,58 @@ def my_result():
         result=result
 
     )
-@app.route("/exam_results")
-def exam_results():
+@app.route("/start_exam/<int:id>")
+def start_exam(id):
 
-    results = Result.query.all()
+    if "student_id" not in session:
+        return redirect("/student_login")
 
-    students = Student.query.all()
+    already = Result.query.filter_by(
+        student_id=session["student_id"],
+        exam_id=id
+    ).first()
 
-    exams = Exam.query.all()
+    if already:
+        return redirect(f"/view_result/{already.id}")
+
+    session["exam_answers"] = {}
+
+    return redirect(f"/exam/{id}/1")
+
+@app.route("/view_result/<int:result_id>")
+def view_result(result_id):
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    result = Result.query.get_or_404(result_id)
+
+    answers = ResultAnswer.query.filter_by(
+        result_id=result.id
+    ).all()
 
     return render_template(
+        "view_result.html",
+        result=result,
+        answers=answers
+    )
 
-        "exam_results.html",
+@app.route("/teacher_view_result/<int:result_id>")
+def teacher_view_result(result_id):
 
-        results=results,
+    if "teacher_id" not in session:
+        return redirect("/teacher_login")
 
-        students=students,
+    result = Result.query.get_or_404(result_id)
 
-        exams=exams
+    answers = ResultAnswer.query.filter_by(
+        result_id=result.id
+    ).all()
 
+    return render_template(
+        "teacher_view_result.html",
+        result=result,
+        answers=answers
     )
 
 @app.route("/test")
