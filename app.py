@@ -6,10 +6,14 @@ from datetime import datetime, timedelta
 from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission, Exam, Question, StudentAnswer, Result, ResultAnswer
 from werkzeug.utils import secure_filename
 import os
+from groq import Groq
+client = Groq(
+    api_key="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"
+)
 import smtplib
 import random
-
 from email.mime.text import MIMEText
+from models import *
 
 app = Flask(__name__)
 app.secret_key = "college_management_secret_key"
@@ -1459,6 +1463,160 @@ def reset_password():
         return redirect("/student_login")
 
     return render_template("reset_password.html")
+
+@app.route("/ai_chat")
+def ai_chat():
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    chats = Chat.query.filter_by(
+        student_id=session["student_id"]
+    ).order_by(Chat.id.desc()).all()
+
+    if len(chats)==0:
+
+        chat=Chat(
+
+            student_id=session["student_id"],
+
+            title="New Chat"
+
+        )
+
+        db.session.add(chat)
+
+        db.session.commit()
+
+        return redirect(f"/chat/{chat.id}")
+
+    return redirect(f"/chat/{chats[0].id}")
+
+@app.route("/new_chat")
+def new_chat():
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    chat=Chat(
+
+        student_id=session["student_id"],
+
+        title="New Chat"
+
+    )
+
+    db.session.add(chat)
+
+    db.session.commit()
+
+    return redirect(f"/chat/{chat.id}")
+
+@app.route("/chat/<int:id>", methods=["GET", "POST"])
+def open_chat(id):
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    chat = Chat.query.get_or_404(id)
+
+    if chat.student_id != session["student_id"]:
+        return "Access Denied"
+
+    if request.method == "POST":
+
+        question = request.form["question"]
+
+        # Save User Message
+        db.session.add(
+            Message(
+                chat_id=id,
+                role="user",
+                content=question
+            )
+        )
+        db.session.commit()
+
+        # Build Conversation History
+        conversation = [
+            {
+                "role": "system",
+                "content": "You are a helpful AI assistant for college students."
+            }
+        ]
+
+        old_messages = Message.query.filter_by(
+            chat_id=id
+        ).order_by(Message.id).all()
+
+        for m in old_messages:
+            conversation.append({
+                "role": m.role,
+                "content": m.content
+            })
+
+        # Ask Groq
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=conversation
+        )
+
+        answer = response.choices[0].message.content
+
+        # Save AI Message
+        db.session.add(
+            Message(
+                chat_id=id,
+                role="assistant",
+                content=answer
+            )
+        )
+
+        # Rename Chat
+        if chat.title == "New Chat":
+            chat.title = question[:30]
+
+        db.session.commit()
+
+        return redirect(f"/chat/{id}")
+
+    chats = Chat.query.filter_by(
+        student_id=session["student_id"]
+    ).order_by(Chat.id.desc()).all()
+
+    messages = Message.query.filter_by(
+        chat_id=id
+    ).order_by(Message.id).all()
+
+    return render_template(
+        "ai_chat.html",
+        chat=chat,
+        chats=chats,
+        messages=messages
+    )
+
+@app.route("/delete_chat/<int:id>")
+def delete_chat(id):
+
+    if "student_id" not in session:
+        return redirect("/student_login")
+
+    chat=Chat.query.get_or_404(id)
+
+    if chat.student_id!=session["student_id"]:
+        return "Access Denied"
+
+    Message.query.filter_by(
+        chat_id=id
+    ).delete()
+
+    db.session.delete(chat)
+
+    db.session.commit()
+
+    return redirect("/ai_chat")
+
+
 
 if __name__ == "__main__":
     with app.app_context():

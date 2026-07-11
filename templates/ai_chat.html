@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>College AI Assistant</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+
+background:#edf2ff;
+overflow:hidden;
+
+}
+
+.sidebar{
+
+background:#1f2328;
+height:100vh;
+color:white;
+padding:20px;
+display:flex;
+flex-direction:column;
+
+}
+
+.sidebar h2{
+
+font-weight:700;
+margin-bottom:20px;
+
+}
+
+.chat-list{
+
+flex:1;
+overflow-y:auto;
+
+}
+
+.chat-list::-webkit-scrollbar{
+
+width:6px;
+
+}
+
+.chat-list::-webkit-scrollbar-thumb{
+
+background:#555;
+border-radius:20px;
+
+}
+
+.chat-link{
+
+background:white;
+border-radius:10px;
+margin-bottom:10px;
+padding:12px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+}
+
+.chat-link a{
+
+text-decoration:none;
+color:#222;
+font-weight:500;
+
+}
+
+.main-chat{
+
+display:flex;
+flex-direction:column;
+height:100vh;
+
+}
+
+.chat-area{
+
+flex:1;
+overflow-y:auto;
+padding:30px;
+background:#f8fafc;
+
+}
+
+.chat-area::-webkit-scrollbar{
+
+width:8px;
+
+}
+
+.chat-area::-webkit-scrollbar-thumb{
+
+background:#bbb;
+border-radius:20px;
+
+}
+
+.user-row{
+
+display:flex;
+justify-content:flex-end;
+margin-bottom:20px;
+
+}
+
+.ai-row{
+
+display:flex;
+justify-content:flex-start;
+margin-bottom:25px;
+
+}
+
+.user-box{
+
+background:#2563eb;
+color:white;
+padding:15px;
+border-radius:18px 18px 0 18px;
+max-width:70%;
+white-space:pre-wrap;
+
+}
+
+.ai-box{
+
+background:white;
+padding:18px;
+border-radius:18px 18px 18px 0;
+box-shadow:0 3px 10px rgba(0,0,0,.08);
+max-width:80%;
+
+}
+
+.ai-message h1,
+.ai-message h2,
+.ai-message h3{
+
+margin-top:15px;
+margin-bottom:10px;
+
+}
+
+.ai-message p{
+
+margin-bottom:12px;
+
+}
+
+.ai-message pre{
+
+background:#1e1e1e;
+padding:18px;
+border-radius:12px;
+overflow:auto;
+
+}
+
+.ai-message code{
+
+font-family:Consolas, monospace;
+
+}
+
+.ai-message table{
+
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+
+}
+
+.ai-message table,
+.ai-message th,
+.ai-message td{
+
+border:1px solid #ddd;
+
+}
+
+.ai-message th,
+.ai-message td{
+
+padding:10px;
+
+}
+
+.chat-input{
+
+background:white;
+padding:20px;
+border-top:1px solid #ddd;
+
+}
+
+textarea{
+
+resize:none!important;
+border-radius:15px!important;
+padding:15px!important;
+
+}
+
+.send-btn{
+
+height:100%;
+border-radius:15px;
+font-weight:600;
+
+}
+
+.sidebar-btn{
+
+margin-bottom:15px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container-fluid">
+
+<div class="row">
+
+<div class="col-md-3 sidebar">
+
+<h2>
+🤖 AI Assistant
+</h2>
+
+<a href="/new_chat"
+class="btn btn-primary w-100 sidebar-btn">
+
++ New Chat
+
+</a>
+
+<a href="/student_dashboard"
+class="btn btn-success w-100 sidebar-btn">
+
+🏠 Dashboard
+
+</a>
+
+<button
+class="btn btn-danger w-100 sidebar-btn"
+disabled>
+
+🚪 Logout
+
+</button>
+
+<hr>
+
+<h6 class="text-secondary mb-3">
+
+Recent Chats
+
+</h6>
+
+<div class="chat-list">
+
+{% for c in chats %}
+
+<div class="chat-link">
+
+<a href="/chat/{{c.id}}">
+
+{{ c.title }}
+
+</a>
+
+<a href="/delete_chat/{{c.id}}"
+class="btn btn-sm btn-danger">
+
+🗑
+
+</a>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+<div class="col-md-9 main-chat">
+
+<div
+class="chat-area"
+id="chatBox">
+{% if messages|length == 0 %}
+
+<div class="text-center mt-5">
+
+    <h2 class="fw-bold">
+
+        👋 Welcome to College AI Assistant
+
+    </h2>
+
+    <p class="text-muted">
+
+        Ask programming, DBMS, OS, CN, Java, Python or any academic question.
+
+    </p>
+
+</div>
+
+{% endif %}
+
+{% for message in messages %}
+
+{% if message.role=="user" %}
+
+<div class="user-row">
+
+    <div class="user-box">
+
+        {{ message.content }}
+
+    </div>
+
+</div>
+
+{% else %}
+
+<div class="ai-row">
+
+    <div class="ai-box ai-message">
+
+        {{ message.content }}
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endfor %}
+
+</div>
+
+<div class="chat-input">
+
+<form method="POST" id="chatForm">
+
+<div class="row g-2">
+
+<div class="col-md-10">
+
+<textarea
+
+name="question"
+
+rows="2"
+
+class="form-control"
+
+placeholder="Ask anything..."
+
+required></textarea>
+
+</div>
+
+<div class="col-md-2 d-grid">
+
+<button
+
+type="submit"
+
+class="btn btn-primary send-btn"
+
+id="sendBtn">
+
+➤ Send
+
+</button>
+
+</div>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<script>
+
+const chatBox = document.getElementById("chatBox");
+
+chatBox.scrollTop = chatBox.scrollHeight;
+
+document.querySelectorAll(".ai-message").forEach(function(msg){
+
+    msg.innerHTML = marked.parse(msg.textContent);
+
+});
+
+document.querySelectorAll("pre code").forEach(function(block){
+
+    hljs.highlightElement(block);
+
+});
+
+document.getElementById("chatForm").addEventListener("submit",function(){
+
+    document.getElementById("sendBtn").innerHTML="🤖 Thinking...";
+
+    document.getElementById("sendBtn").disabled=true;
+
+});
+
+</script>
+
+</body>
+
+</html>
