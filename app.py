@@ -6,9 +6,12 @@ from datetime import datetime, timedelta
 from models import Student, Teacher, Book, IssuedBook, Librarian, StudyResource, Assignment, Submission, Exam, Question, StudentAnswer, Result, ResultAnswer
 from werkzeug.utils import secure_filename
 import os
+from dotenv import load_dotenv
+import os
+load_dotenv()
 from groq import Groq
 client = Groq(
-    api_key="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"
+    api_key=os.getenv("GROQ_API_KEY")
 )
 import smtplib
 import random
