@@ -207,34 +207,4 @@ class Message(db.Model):
 
     content = db.Column(db.Text)
 
-class Event(db.Model):
 
-    id = db.Column(db.Integer, primary_key=True)
-
-    title = db.Column(db.String(200))
-
-    description = db.Column(db.Text)
-
-    date = db.Column(db.String(50))
-
-    time = db.Column(db.String(50))
-
-    venue = db.Column(db.String(200))
-
-    poster = db.Column(db.String(200))
-
-    max_participants = db.Column(db.Integer)
-
-class EventRegistration(db.Model):
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    student_id = db.Column(
-        db.Integer,
-        db.ForeignKey("student.id")
-    )
-
-    event_id = db.Column(
-        db.Integer,
-        db.ForeignKey("event.id")
-    )
